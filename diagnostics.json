@@ -1,0 +1,10 @@
+[
+  {
+    "file": "/workspace/broken_01_missing_semicolon/broken_01_missing_semicolon.ino",
+    "line": 3,
+    "column": 1,
+    "severity": "error",
+    "message": "expected ';' before '}' token",
+    "raw": "/workspace/broken_01_missing_semicolon/broken_01_missing_semicolon.ino:3:1: error: expected ';' before '}' token"
+  }
+]
