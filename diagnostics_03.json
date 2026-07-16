@@ -1,0 +1,26 @@
+[
+  {
+    "file": "/workspace/broken_03_missing_include/broken_03_missing_include.ino",
+    "line": 6,
+    "column": 3,
+    "severity": "error",
+    "message": "'DynamicJsonDocument' was not declared in this scope",
+    "raw": "/workspace/broken_03_missing_include/broken_03_missing_include.ino:6:3: error: 'DynamicJsonDocument' was not declared in this scope"
+  },
+  {
+    "file": "/workspace/broken_03_missing_include/broken_03_missing_include.ino",
+    "line": 7,
+    "column": 3,
+    "severity": "error",
+    "message": "'doc' was not declared in this scope",
+    "raw": "/workspace/broken_03_missing_include/broken_03_missing_include.ino:7:3: error: 'doc' was not declared in this scope"
+  },
+  {
+    "file": "/workspace/broken_03_missing_include/broken_03_missing_include.ino",
+    "line": 8,
+    "column": 3,
+    "severity": "error",
+    "message": "'serializeJson' was not declared in this scope",
+    "raw": "/workspace/broken_03_missing_include/broken_03_missing_include.ino:8:3: error: 'serializeJson' was not declared in this scope"
+  }
+]
