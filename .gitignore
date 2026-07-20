@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+diagnostics*.json
+analysis*.json
+diagnosis*.json
