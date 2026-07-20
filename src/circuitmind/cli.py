@@ -6,6 +6,7 @@ import click
 from circuitmind.build import build_project
 from circuitmind.parse import parse_arduino_cli_errors
 from circuitmind.analyze import analyze_project
+from circuitmind.diagnose import diagnose_project
 
 
 @click.group()
@@ -65,6 +66,19 @@ def analyze(project_path: str, output: str | None):
     else:
         click.echo(json.dumps(data, indent=2))
 
+@cli.command()
+@click.argument("project_path", type=click.Path(exists=True))
+def diagnose(project_path: str):
+    result = diagnose_project(Path(project_path))
+
+    data = {
+        "diagnosis": result.diagnosis,
+        "root_cause": result.root_cause,
+        "confidence": result.confidence,
+        "patch": result.patch,
+    }
+
+    click.echo(json.dumps(data, indent=2))
 
 if __name__ == "__main__":
     cli()

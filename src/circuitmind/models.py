@@ -18,3 +18,11 @@ class Diagnostic:
     severity: str
     message: str
     raw: str
+
+@dataclass
+class DiagnosisResult:
+    diagnosis: str
+    root_cause: str
+    confidence: float
+    patch: str
+    raw_response: Optional[str] = None
