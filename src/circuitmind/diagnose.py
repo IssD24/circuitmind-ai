@@ -6,6 +6,7 @@ from anthropic import Anthropic
 
 from circuitmind.analyze import analyze_project
 from circuitmind.models import DiagnosisResult, Diagnostic
+from circuitmind.build import build_project
 
 
 def add_line_numbers(source: str) -> str:
@@ -102,22 +103,52 @@ def parse_llm_json(raw_text: str) -> DiagnosisResult:
 def diagnose_project(project_path: Path) -> DiagnosisResult:
     project_path = project_path.resolve()
 
+    build_result = build_project(project_path)
+
+    if build_result.exit_code == 0:
+        return DiagnosisResult(
+            diagnosis="Project already compiles.",
+            root_cause="No compiler error was found.",
+            confidence=1.0,
+            patch="",
+            raw_response=None,
+        )
+
+    if build_result.exit_code == -1:
+        return DiagnosisResult(
+            diagnosis="Build timed out.",
+            root_cause=build_result.stderr,
+            confidence=0.0,
+            patch="",
+            raw_response=None,
+        )
+
     diagnostics = analyze_project(project_path)
+
     prompt = build_diagnosis_prompt(project_path, diagnostics)
 
     client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-    response = client.messages.create(
-        model="claude-3-5-sonnet-latest",
-        max_tokens=2000,
-        temperature=0,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-    )
+    try:
+        response = client.messages.create(
+            model="claude-3-5-sonnet-latest",
+            max_tokens=2000,
+            temperature=0,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+        )
+    except Exception as exc:
+        return DiagnosisResult(
+            diagnosis="LLM request failed.",
+            root_cause=str(exc),
+            confidence=0.0,
+            patch="",
+            raw_response=None,
+        )
 
     raw_text = response.content[0].text.strip()
     return parse_llm_json(raw_text)

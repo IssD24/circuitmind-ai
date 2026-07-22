@@ -7,7 +7,7 @@ from circuitmind.build import build_project
 from circuitmind.parse import parse_arduino_cli_errors
 from circuitmind.analyze import analyze_project
 from circuitmind.diagnose import diagnose_project
-
+from circuitmind.validate import collect_allowed_source_files, validate_diagnosis_result
 
 @click.group()
 def cli():
@@ -71,6 +71,14 @@ def analyze(project_path: str, output: str | None):
 def diagnose(project_path: str):
     result = diagnose_project(Path(project_path))
 
+    allowed_files = collect_allowed_source_files(Path(project_path))
+    errors = validate_diagnosis_result(result, allowed_files=allowed_files)
+
+    if errors:
+        click.echo("Validation errors:", err=True)
+        for error in errors:
+            click.echo(f"- {error}", err=True)
+
     data = {
         "diagnosis": result.diagnosis,
         "root_cause": result.root_cause,
@@ -79,6 +87,6 @@ def diagnose(project_path: str):
     }
 
     click.echo(json.dumps(data, indent=2))
-
+    
 if __name__ == "__main__":
     cli()

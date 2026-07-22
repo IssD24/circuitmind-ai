@@ -6,7 +6,6 @@ from circuitmind.models import BuildResult
 
 def build_project(project_path: Path) -> BuildResult:
     project_path = project_path.resolve()
-
     sketch_name = project_path.name
     container_path = f"/workspace/{sketch_name}"
 
@@ -24,11 +23,20 @@ def build_project(project_path: Path) -> BuildResult:
         container_path,
     ]
 
-    completed = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return BuildResult(
+            command=command,
+            exit_code=-1,
+            stdout=exc.stdout or "",
+            stderr=exc.stderr or "Build timed out",
+        )
 
     return BuildResult(
         command=command,
