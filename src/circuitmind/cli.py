@@ -9,6 +9,7 @@ from circuitmind.analyze import analyze_project
 from circuitmind.diagnose import diagnose_project
 from circuitmind.validate import collect_allowed_source_files, validate_diagnosis_result
 from circuitmind.patch import apply_patch_to_workspace
+from circuitmind.fix import fix_project
 
 @click.group()
 def cli():
@@ -91,28 +92,25 @@ def diagnose(project_path: str):
 
 @cli.command()
 @click.argument("project_path", type=click.Path(exists=True))
-def fix(project_path: str):
-    result = diagnose_project(Path(project_path))
+@click.option("--max-iterations", default=3, show_default=True)
+def fix(project_path: str, max_iterations: int):
+    result = fix_project(Path(project_path), max_iterations=max_iterations)
 
-    allowed_files = collect_allowed_source_files(Path(project_path))
-    errors = validate_diagnosis_result(result, allowed_files=allowed_files)
+    for iteration in result.iterations:
+        click.echo(f"Iteration {iteration.iteration}:")
+        click.echo(f"  Diagnosis: {iteration.diagnosis.diagnosis}")
+        click.echo(f"  Message: {iteration.message}")
 
-    if errors:
-        click.echo("Validation errors:")
-        for error in errors:
-            click.echo(f"- {error}")
-        return
+        if iteration.workspace_dir:
+            click.echo(f"  Workspace: {iteration.workspace_dir}")
 
-    if not result.patch.strip():
-        click.echo(result.diagnosis)
-        click.echo("No patch was produced.")
-        return
+        if iteration.build_exit_code is not None:
+            click.echo(f"  Build exit code: {iteration.build_exit_code}")
 
-    patch_result = apply_patch_to_workspace(result.patch, Path(project_path))
-
-    click.echo(result.diagnosis)
-    click.echo(patch_result.message)
-    click.echo(f"Workspace: {patch_result.workspace_dir}")
+    if result.success:
+        click.echo("CircuitMind fixed the project.")
+    else:
+        click.echo("CircuitMind did not fix the project.")
 
 if __name__ == "__main__":
     cli()
