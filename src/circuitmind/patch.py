@@ -20,7 +20,10 @@ def create_workspace(project_path: Path) -> Path:
     workspace_root = project_path.parent.parent / ".circuitmind"
     workspace_root.mkdir(exist_ok=True)
 
-    workspace_dir = workspace_root / f"workspace-{session_id}"
+    session_dir = workspace_root / f"workspace-{session_id}"
+    session_dir.mkdir()
+
+    workspace_dir = session_dir / project_path.name
     shutil.copytree(project_path, workspace_dir)
 
     return workspace_dir

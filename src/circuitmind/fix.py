@@ -7,6 +7,8 @@ from circuitmind.models import DiagnosisResult
 from circuitmind.patch import apply_patch_to_workspace
 from circuitmind.validate import collect_allowed_source_files, validate_diagnosis_result
 
+from collections.abc import Callable
+
 
 @dataclass
 class FixIteration:
@@ -25,13 +27,16 @@ class FixResult:
     final_workspace: Path | None
 
 
-def fix_project(project_path: Path, max_iterations: int = 3) -> FixResult:
+def fix_project(
+    project_path: Path,
+    max_iterations: int = 3,
+    diagnose_func: Callable[[Path], DiagnosisResult] = diagnose_project,
+) -> FixResult:
     current_path = project_path
     iterations: list[FixIteration] = []
 
     for iteration in range(1, max_iterations + 1):
-        diagnosis = diagnose_project(current_path)
-
+        diagnosis = diagnose_func(current_path)
         allowed_files = collect_allowed_source_files(current_path)
         validation_errors = validate_diagnosis_result(
             diagnosis,
