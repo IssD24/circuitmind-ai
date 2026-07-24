@@ -8,6 +8,7 @@ from circuitmind.parse import parse_arduino_cli_errors
 from circuitmind.analyze import analyze_project
 from circuitmind.diagnose import diagnose_project
 from circuitmind.validate import collect_allowed_source_files, validate_diagnosis_result
+from circuitmind.patch import apply_patch_to_workspace
 
 @click.group()
 def cli():
@@ -87,6 +88,31 @@ def diagnose(project_path: str):
     }
 
     click.echo(json.dumps(data, indent=2))
-    
+
+@cli.command()
+@click.argument("project_path", type=click.Path(exists=True))
+def fix(project_path: str):
+    result = diagnose_project(Path(project_path))
+
+    allowed_files = collect_allowed_source_files(Path(project_path))
+    errors = validate_diagnosis_result(result, allowed_files=allowed_files)
+
+    if errors:
+        click.echo("Validation errors:")
+        for error in errors:
+            click.echo(f"- {error}")
+        return
+
+    if not result.patch.strip():
+        click.echo(result.diagnosis)
+        click.echo("No patch was produced.")
+        return
+
+    patch_result = apply_patch_to_workspace(result.patch, Path(project_path))
+
+    click.echo(result.diagnosis)
+    click.echo(patch_result.message)
+    click.echo(f"Workspace: {patch_result.workspace_dir}")
+
 if __name__ == "__main__":
     cli()
