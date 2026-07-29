@@ -5,3 +5,8 @@ __pycache__/
 diagnostics*.json
 analysis*.json
 diagnosis*.json
+
+sessions/
+sessions.jsonl
+.circuitmind/
+
