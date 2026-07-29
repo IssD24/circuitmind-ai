@@ -42,6 +42,18 @@ def fix_project(
     iterations: list[FixIteration] = []
     session_dir = create_session_dir()
 
+    build_before = build_project(project_path)
+
+    write_text_artifact(
+        session_dir,
+        "build_before.txt",
+        "STDOUT:\n"
+        + build_before.stdout
+        + "\n\nSTDERR:\n"
+        + build_before.stderr
+        + f"\n\nEXIT CODE: {build_before.exit_code}\n",
+    )
+
     for iteration in range(1, max_iterations + 1):
         diagnosis = diagnose_func(current_path)
 
@@ -91,6 +103,8 @@ def fix_project(
                 root_cause=diagnosis.root_cause,
                 patch=diagnosis.patch,
                 final_message=message,
+                build_before_exit_code=build_before.exit_code,
+                build_after_exit_code=None,
             )
 
             append_session_index(
@@ -133,6 +147,8 @@ def fix_project(
                 root_cause=diagnosis.root_cause,
                 patch=diagnosis.patch,
                 final_message=message,
+                build_before_exit_code=build_before.exit_code,
+                build_after_exit_code=None,
             )
 
             append_session_index(
@@ -176,6 +192,8 @@ def fix_project(
                 root_cause=diagnosis.root_cause,
                 patch=diagnosis.patch,
                 final_message=message,
+                build_before_exit_code=build_before.exit_code,
+                build_after_exit_code=None,
             )
 
             append_session_index(
@@ -198,6 +216,16 @@ def fix_project(
         fixed = build_result.exit_code == 0
         message = "Build passed after patch." if fixed else "Build still fails after patch."
 
+        write_text_artifact(
+            session_dir,
+            f"build_after_{iteration}.txt",
+            "STDOUT:\n"
+            + build_result.stdout
+            + "\n\nSTDERR:\n"
+            + build_result.stderr
+            + f"\n\nEXIT CODE: {build_result.exit_code}\n",
+        )
+
         iterations.append(
             FixIteration(
                 iteration=iteration,
@@ -219,6 +247,8 @@ def fix_project(
                 root_cause=diagnosis.root_cause,
                 patch=diagnosis.patch,
                 final_message=message,
+                build_before_exit_code=build_before.exit_code,
+                build_after_exit_code=build_result.exit_code,
             )
 
             append_session_index(
@@ -240,14 +270,21 @@ def fix_project(
         current_path = patch_result.workspace_dir
 
     final_iteration = iterations[-1] if iterations else None
-    final_message = final_iteration.message if final_iteration else "No iterations ran."
-    final_diagnosis = final_iteration.diagnosis if final_iteration else DiagnosisResult(
-        diagnosis="No diagnosis.",
-        root_cause="No iterations ran.",
-        confidence=0.0,
-        patch="",
-        raw_response=None,
-    )
+
+    if final_iteration:
+        final_diagnosis = final_iteration.diagnosis
+        final_message = final_iteration.message
+        final_exit_code = final_iteration.build_exit_code
+    else:
+        final_diagnosis = DiagnosisResult(
+            diagnosis="No diagnosis.",
+            root_cause="No iterations ran.",
+            confidence=0.0,
+            patch="",
+            raw_response=None,
+        )
+        final_message = "No iterations ran."
+        final_exit_code = None
 
     write_report(
         session_dir=session_dir,
@@ -258,6 +295,8 @@ def fix_project(
         root_cause=final_diagnosis.root_cause,
         patch=final_diagnosis.patch,
         final_message=final_message,
+        build_before_exit_code=build_before.exit_code,
+        build_after_exit_code=final_exit_code,
     )
 
     append_session_index(
@@ -266,7 +305,7 @@ def fix_project(
             "project": str(project_path),
             "success": False,
             "iterations": len(iterations),
-            "final_exit_code": final_iteration.build_exit_code if final_iteration else None,
+            "final_exit_code": final_exit_code,
         }
     )
 

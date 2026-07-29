@@ -36,6 +36,8 @@ def write_report(
     root_cause: str,
     patch: str,
     final_message: str,
+    build_before_exit_code: int | None = None,
+    build_after_exit_code: int | None = None,
 ) -> Path:
     report = (
         "# CircuitMind Session Report\n\n"
@@ -43,6 +45,8 @@ def write_report(
         f"- Project: {project}\n"
         f"- Success: {success}\n"
         f"- Iterations: {iterations}\n\n"
+        f"- Build before exit code: {build_before_exit_code}\n"
+        f"- Build after exit code: {build_after_exit_code}\n\n"
         "## Diagnosis\n\n"
         f"{diagnosis}\n\n"
         "## Root Cause\n\n"
