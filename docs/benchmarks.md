@@ -8,12 +8,18 @@
 | 04 | wrong API | typo/API misuse | `Serial.printline` → `Serial.println` | added/tested |
 | 05 | missing include | missing standard header | add `#include <vector>` | added/tested |
 | 06 | missing library | missing third-party dependency | explain/install ArduinoJson library | added; missing library error parsed |
+| 07 | incorrect pin | logic/static issue | `-1` → `LED_BUILTIN` | added; may compile |
+| 08 | wrong function signature | function call error | pass `LED_BUILTIN` | added/tested |
 
 ## Notes
 
 Benchmarks 01–05 are intended to test source-level fixes.
 
 Benchmark 06 may require installing a missing third-party Arduino library rather than editing source code. CircuitMind should eventually recognize this as an environment/dependency issue.
+
+Benchmark 07 is a logic/static-analysis case. It may compile successfully because the compiler does not know that `-1` is an invalid practical output pin.
+
+Benchmark 08 is a compiler-error case because `blinkLed` is called without the required argument.
 
 ## Compiler vs Logic Benchmarks
 
