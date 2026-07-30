@@ -1,0 +1,7 @@
+{
+  "id": "broken_10_forgotten_serial_begin",
+  "category": "logic",
+  "expected_issue": "Serial.println is used in loop() but Serial.begin is not called in setup().",
+  "expected_fix": "Add Serial.begin(9600); to setup().",
+  "should_compile_before_fix": true
+}

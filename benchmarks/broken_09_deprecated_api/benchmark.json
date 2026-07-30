@@ -1,0 +1,7 @@
+{
+  "id": "broken_09_deprecated_api",
+  "category": "warning",
+  "expected_issue": "A byte variable is assigned the value 300, which is outside the normal 0-255 byte range.",
+  "expected_fix": "Use a wider integer type or choose a value within the byte range.",
+  "should_compile_before_fix": true
+}

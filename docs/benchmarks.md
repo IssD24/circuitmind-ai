@@ -10,6 +10,9 @@
 | 06 | missing library | missing third-party dependency | explain/install ArduinoJson library | added; missing library error parsed |
 | 07 | incorrect pin | logic/static issue | `-1` → `LED_BUILTIN` | added; may compile |
 | 08 | wrong function signature | function call error | pass `LED_BUILTIN` | added/tested |
+| 09 | deprecated/suspicious API | warning/static issue | use safer type/range | added; may compile |
+| 10 | forgotten Serial.begin | logic issue | add `Serial.begin(9600);` | added; may compile |
+
 
 ## Notes
 
@@ -21,8 +24,12 @@ Benchmark 07 is a logic/static-analysis case. It may compile successfully becaus
 
 Benchmark 08 is a compiler-error case because `blinkLed` is called without the required argument.
 
+
+
 ## Compiler vs Logic Benchmarks
 
 Some benchmarks fail at compile time and can be detected from Arduino CLI diagnostics.
 
-Other benchmarks may compile successfully but still represent common firmware bugs. These require static rules, prompt-based source review, or benchmark metadata.
+Other benchmarks compile successfully but still represent common firmware bugs. These require static rules, prompt-based source review, or benchmark metadata.
+
+Benchmarks 07, 09, and 10 currently demonstrate this limitation. They may compile successfully even though the expected issue is still valid.

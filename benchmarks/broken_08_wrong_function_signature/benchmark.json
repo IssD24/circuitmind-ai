@@ -1,0 +1,7 @@
+{
+  "id": "broken_08_wrong_function_signature",
+  "category": "compiler",
+  "expected_issue": "blinkLed expects one int argument, but loop calls it with no arguments.",
+  "expected_fix": "Call blinkLed(LED_BUILTIN).",
+  "should_compile_before_fix": false
+}

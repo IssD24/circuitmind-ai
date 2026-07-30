@@ -1,0 +1,7 @@
+{
+  "id": "broken_07_incorrect_pin",
+  "category": "logic",
+  "expected_issue": "LED_PIN is set to -1, which is not a valid normal Arduino Uno output pin.",
+  "expected_fix": "Use LED_BUILTIN or a valid digital pin such as 13.",
+  "should_compile_before_fix": true
+}
