@@ -6,6 +6,10 @@ from circuitmind.models import Diagnostic
 ERROR_PATTERNS = [
     re.compile(
         r"(?P<file>.*?):(?P<line>\d+):(?P<column>\d+):\s+"
+        r"fatal error:\s+(?P<message>.*)"
+    ),
+    re.compile(
+        r"(?P<file>.*?):(?P<line>\d+):(?P<column>\d+):\s+"
         r"(?P<severity>error|warning):\s+(?P<message>.*)"
     ),
     re.compile(
@@ -31,7 +35,7 @@ def parse_arduino_cli_errors(output: str) -> list[Diagnostic]:
                     file=groups.get("file"),
                     line=int(groups["line"]) if groups.get("line") else None,
                     column=int(groups["column"]) if groups.get("column") else None,
-                    severity=groups.get("severity", "error"),
+                    severity=groups.get("severity") or "error",
                     message=groups.get("message", "").strip(),
                     raw=line,
                 )
