@@ -18,6 +18,20 @@ def run_command(command: list[str]) -> subprocess.CompletedProcess:
     )
 
 
+def load_metadata(benchmark: Path) -> dict:
+    metadata_path = benchmark / "benchmark.json"
+
+    if not metadata_path.exists():
+        return {
+            "category": "compiler",
+            "expected_issue": "",
+            "expected_fix": "",
+            "should_compile_before_fix": False,
+        }
+
+    return json.loads(metadata_path.read_text(encoding="utf-8"))
+
+
 def main() -> None:
     RESULTS_DIR.mkdir(exist_ok=True)
 
@@ -29,10 +43,13 @@ def main() -> None:
 
     rows = []
 
-    print(f"{'Benchmark':40} {'Before':10} {'Fix':10} Status")
-    print("-" * 75)
+    print(f"{'Benchmark':40} {'Type':12} {'Before':10} {'Fix':14} Status")
+    print("-" * 95)
 
     for benchmark in benchmark_dirs:
+        metadata = load_metadata(benchmark)
+        category = metadata.get("category", "compiler")
+
         diagnostics_path = RESULTS_DIR / f"{benchmark.name}.json"
 
         build_result = run_command(
@@ -65,7 +82,9 @@ def main() -> None:
             ]
         )
 
-        if "CircuitMind fixed the project." in fix_result.stdout:
+        if category in {"logic", "warning"} and before_status == "pass":
+            fix_status = "compile-pass"
+        elif "CircuitMind fixed the project." in fix_result.stdout:
             fix_status = "fixed"
         elif "CircuitMind did not fix the project." in fix_result.stdout:
             fix_status = "not fixed"
@@ -74,25 +93,26 @@ def main() -> None:
 
         status = "ok" if build_result.returncode == 0 and fix_result.returncode == 0 else "error"
 
-        rows.append((benchmark.name, before_status, fix_status, status))
+        rows.append((benchmark.name, category, before_status, fix_status, status))
 
         print(
             f"{benchmark.name:40} "
+            f"{category:12} "
             f"{before_status:10} "
-            f"{fix_status:10} "
+            f"{fix_status:14} "
             f"{status}"
         )
 
     scoreboard = [
         "# CircuitMind Benchmark Scoreboard",
         "",
-        "| Benchmark | Before | Fix Result | Status |",
-        "|---|---|---|---|",
+        "| Benchmark | Type | Before | Fix Result | Status |",
+        "|---|---|---|---|---|",
     ]
 
-    for benchmark_name, before_status, fix_status, status in rows:
+    for benchmark_name, category, before_status, fix_status, status in rows:
         scoreboard.append(
-            f"| {benchmark_name} | {before_status} | {fix_status} | {status} |"
+            f"| {benchmark_name} | {category} | {before_status} | {fix_status} | {status} |"
         )
 
     SCOREBOARD_PATH.write_text("\n".join(scoreboard) + "\n", encoding="utf-8")
