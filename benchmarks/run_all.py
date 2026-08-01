@@ -6,6 +6,7 @@ import subprocess
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BENCHMARKS_DIR = REPO_ROOT / "benchmarks"
 RESULTS_DIR = REPO_ROOT / "benchmark_results"
+SCOREBOARD_PATH = RESULTS_DIR / "scoreboard.md"
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess:
@@ -25,6 +26,8 @@ def main() -> None:
         for path in BENCHMARKS_DIR.iterdir()
         if path.is_dir() and path.name.startswith("broken_")
     )
+
+    rows = []
 
     print(f"{'Benchmark':40} {'Before':10} {'Fix':10} Status")
     print("-" * 75)
@@ -71,12 +74,31 @@ def main() -> None:
 
         status = "ok" if build_result.returncode == 0 and fix_result.returncode == 0 else "error"
 
+        rows.append((benchmark.name, before_status, fix_status, status))
+
         print(
             f"{benchmark.name:40} "
             f"{before_status:10} "
             f"{fix_status:10} "
             f"{status}"
         )
+
+    scoreboard = [
+        "# CircuitMind Benchmark Scoreboard",
+        "",
+        "| Benchmark | Before | Fix Result | Status |",
+        "|---|---|---|---|",
+    ]
+
+    for benchmark_name, before_status, fix_status, status in rows:
+        scoreboard.append(
+            f"| {benchmark_name} | {before_status} | {fix_status} | {status} |"
+        )
+
+    SCOREBOARD_PATH.write_text("\n".join(scoreboard) + "\n", encoding="utf-8")
+
+    print()
+    print(f"Wrote scoreboard to {SCOREBOARD_PATH.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":
