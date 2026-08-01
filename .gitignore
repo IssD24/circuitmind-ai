@@ -10,3 +10,4 @@ sessions/
 sessions.jsonl
 .circuitmind/
 
+benchmark_results/
