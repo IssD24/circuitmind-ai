@@ -3,27 +3,29 @@ import json
 
 import click
 
-from circuitmind.build import build_project
-from circuitmind.parse import parse_arduino_cli_errors
 from circuitmind.analyze import analyze_project
+from circuitmind.build import build_project
 from circuitmind.diagnose import diagnose_project
-from circuitmind.validate import collect_allowed_source_files, validate_diagnosis_result
-from circuitmind.patch import apply_patch_to_workspace
 from circuitmind.fix import fix_project
+from circuitmind.report import write_fix_report
+
 
 @click.group()
 def cli():
+    """CircuitMind AI firmware debugging CLI."""
     pass
 
 
 @cli.command()
 @click.argument("project_path", type=click.Path(exists=True))
-@click.option("--output", "-o", type=click.Path(), default=None)
+@click.option("--output", type=click.Path(), default=None)
 def build(project_path: str, output: str | None):
-    result = build_project(Path(project_path))
+    """Build a firmware project and save parsed diagnostics."""
+    project = Path(project_path)
+    build_result = build_project(project)
 
-    combined_output = result.stderr + "\n" + result.stdout
-    diagnostics = parse_arduino_cli_errors(combined_output)
+    combined_output = build_result.stderr + "\n" + build_result.stdout
+    diagnostics = analyze_project(project)
 
     data = [
         {
@@ -38,16 +40,17 @@ def build(project_path: str, output: str | None):
     ]
 
     if output:
-        Path(output).write_text(json.dumps(data, indent=2))
+        Path(output).write_text(json.dumps(data, indent=2), encoding="utf-8")
         click.echo(f"Wrote diagnostics to {output}")
     else:
-        click.echo(json.dumps(data, indent=2))
+        click.echo(combined_output)
 
 
 @cli.command()
 @click.argument("project_path", type=click.Path(exists=True))
-@click.option("--output", "-o", type=click.Path(), default=None)
+@click.option("--output", type=click.Path(), default=None)
 def analyze(project_path: str, output: str | None):
+    """Analyze a firmware project and save parsed diagnostics."""
     diagnostics = analyze_project(Path(project_path))
 
     data = [
@@ -63,54 +66,65 @@ def analyze(project_path: str, output: str | None):
     ]
 
     if output:
-        Path(output).write_text(json.dumps(data, indent=2))
+        Path(output).write_text(json.dumps(data, indent=2), encoding="utf-8")
         click.echo(f"Wrote diagnostics to {output}")
     else:
         click.echo(json.dumps(data, indent=2))
 
+
 @cli.command()
 @click.argument("project_path", type=click.Path(exists=True))
 def diagnose(project_path: str):
+    """Diagnose a firmware build failure."""
     result = diagnose_project(Path(project_path))
 
-    allowed_files = collect_allowed_source_files(Path(project_path))
-    errors = validate_diagnosis_result(result, allowed_files=allowed_files)
+    click.echo(
+        json.dumps(
+            {
+                "diagnosis": result.diagnosis,
+                "root_cause": result.root_cause,
+                "confidence": result.confidence,
+                "patch": result.patch,
+            },
+            indent=2,
+        )
+    )
 
-    if errors:
-        click.echo("Validation errors:", err=True)
-        for error in errors:
-            click.echo(f"- {error}", err=True)
-
-    data = {
-        "diagnosis": result.diagnosis,
-        "root_cause": result.root_cause,
-        "confidence": result.confidence,
-        "patch": result.patch,
-    }
-
-    click.echo(json.dumps(data, indent=2))
 
 @cli.command()
 @click.argument("project_path", type=click.Path(exists=True))
 @click.option("--max-iterations", default=3, show_default=True)
-def fix(project_path: str, max_iterations: int):
-    result = fix_project(Path(project_path), max_iterations=max_iterations)
+@click.option("--report", type=click.Path(), default=None)
+def fix(project_path: str, max_iterations: int, report: str | None):
+    """Run the CircuitMind fix loop on a firmware project."""
+    project = Path(project_path)
+    result = fix_project(project, max_iterations=max_iterations)
+
+    click.echo("CircuitMind Fix Session")
+    click.echo()
+    click.echo(f"Project: {project_path}")
+    click.echo(f"Max iterations: {max_iterations}")
+    click.echo()
 
     for iteration in result.iterations:
         click.echo(f"Iteration {iteration.iteration}:")
         click.echo(f"  Diagnosis: {iteration.diagnosis.diagnosis}")
         click.echo(f"  Message: {iteration.message}")
-
         if iteration.workspace_dir:
             click.echo(f"  Workspace: {iteration.workspace_dir}")
-
         if iteration.build_exit_code is not None:
             click.echo(f"  Build exit code: {iteration.build_exit_code}")
+        click.echo()
 
     if result.success:
         click.echo("CircuitMind fixed the project.")
     else:
         click.echo("CircuitMind did not fix the project.")
+
+    if report:
+        report_path = write_fix_report(Path(report), project, result)
+        click.echo(f"Report saved to: {report_path}")
+
 
 if __name__ == "__main__":
     cli()
