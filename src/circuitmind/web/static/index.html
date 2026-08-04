@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CircuitMind AI</title>
+</head>
+<body>
+  <h1>CircuitMind AI</h1>
+
+  <label>Project path:</label>
+  <input id="projectPath" value="benchmarks/broken_01_missing_semicolon" size="60">
+
+  <br><br>
+
+  <label>Max iterations:</label>
+  <input id="maxIterations" value="3" type="number" min="1" max="10">
+
+  <br><br>
+
+  <button onclick="runFix()">Run Fix</button>
+
+  <h2>Output</h2>
+  <pre id="output"></pre>
+
+  <script>
+    async function runFix() {
+      const projectPath = document.getElementById("projectPath").value;
+      const maxIterations = Number(document.getElementById("maxIterations").value);
+
+      document.getElementById("output").textContent = "Running...";
+
+      const response = await fetch("/fix", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          project_path: projectPath,
+          max_iterations: maxIterations
+        })
+      });
+
+      const data = await response.json();
+      document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>

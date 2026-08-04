@@ -1,4 +1,6 @@
 from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -7,6 +9,7 @@ from circuitmind.fix import fix_project
 
 
 app = FastAPI(title="CircuitMind AI")
+app.mount("/static", StaticFiles(directory="src/circuitmind/web/static"), name="static")
 
 
 class FixRequest(BaseModel):
