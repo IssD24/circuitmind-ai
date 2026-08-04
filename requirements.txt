@@ -1,0 +1,5 @@
+click
+anthropic
+patch-ng
+fastapi
+uvicorn
