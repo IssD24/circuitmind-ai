@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import re
 
 from anthropic import Anthropic
 
@@ -88,17 +89,33 @@ Source with line numbers:
 """
 
 
+def extract_json_object(raw_text: str) -> str:
+    text = raw_text.strip()
+
+    fenced_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if fenced_match:
+        return fenced_match.group(1)
+
+    first_brace = text.find("{")
+    last_brace = text.rfind("}")
+
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        return text[first_brace : last_brace + 1]
+
+    return text
+
+
 def parse_llm_json(raw_text: str) -> DiagnosisResult:
-    data = json.loads(raw_text)
+    json_text = extract_json_object(raw_text)
+    data = json.loads(json_text)
 
     return DiagnosisResult(
-        diagnosis=data["diagnosis"],
-        root_cause=data["root_cause"],
-        confidence=float(data["confidence"]),
-        patch=data.get("patch", ""),
+        diagnosis=str(data.get("diagnosis", "")).strip(),
+        root_cause=str(data.get("root_cause", "")).strip(),
+        confidence=float(data.get("confidence", 0.0)),
+        patch=str(data.get("patch", "")),
         raw_response=raw_text,
     )
-
 
 def diagnose_project(project_path: Path) -> DiagnosisResult:
     project_path = project_path.resolve()
@@ -131,9 +148,8 @@ def diagnose_project(project_path: Path) -> DiagnosisResult:
 
     try:
         response = client.messages.create(
-            model="claude-3-5-sonnet-latest",
-            max_tokens=2000,
-            temperature=0,
+            model="claude-sonnet-5",
+            max_tokens=1200,
             messages=[
                 {
                     "role": "user",
@@ -151,4 +167,13 @@ def diagnose_project(project_path: Path) -> DiagnosisResult:
         )
 
     raw_text = response.content[0].text.strip()
-    return parse_llm_json(raw_text)
+    try:
+        return parse_llm_json(raw_text)
+    except Exception as exc:
+        return DiagnosisResult(
+        diagnosis="LLM response was not valid JSON.",
+        root_cause=f"{exc}\n\nRaw response:\n{raw_text}",
+        confidence=0.0,
+        patch="",
+        raw_response=raw_text,
+    )
