@@ -18,7 +18,15 @@ def create_workspace(project_path: Path) -> Path:
     project_path = project_path.resolve()
     session_id = uuid.uuid4().hex[:8]
 
-    workspace_root = project_path.parent.parent / ".circuitmind"
+    parts = project_path.parts
+
+    if ".circuitmind" in parts:
+        circuitmind_index = parts.index(".circuitmind")
+        repo_root = Path(*parts[:circuitmind_index])
+    else:
+        repo_root = project_path.parent.parent
+
+    workspace_root = repo_root / ".circuitmind"
     workspace_root.mkdir(exist_ok=True)
 
     session_dir = workspace_root / f"workspace-{session_id}"
