@@ -104,6 +104,30 @@ def extract_json_object(raw_text: str) -> str:
 
     return text
 
+def normalize_confidence(value) -> float:
+    if isinstance(value, (int, float)):
+        return max(0.0, min(1.0, float(value)))
+
+    if isinstance(value, str):
+        cleaned = value.strip().lower()
+
+        confidence_map = {
+            "low": 0.3,
+            "medium": 0.6,
+            "moderate": 0.6,
+            "high": 0.9,
+            "very high": 0.95,
+        }
+
+        if cleaned in confidence_map:
+            return confidence_map[cleaned]
+
+        try:
+            return max(0.0, min(1.0, float(cleaned)))
+        except ValueError:
+            return 0.0
+
+    return 0.0
 
 def parse_llm_json(raw_text: str) -> DiagnosisResult:
     json_text = extract_json_object(raw_text)
@@ -112,10 +136,20 @@ def parse_llm_json(raw_text: str) -> DiagnosisResult:
     return DiagnosisResult(
         diagnosis=str(data.get("diagnosis", "")).strip(),
         root_cause=str(data.get("root_cause", "")).strip(),
-        confidence=float(data.get("confidence", 0.0)),
+        confidence=normalize_confidence(data.get("confidence", 0.0)),
         patch=str(data.get("patch", "")),
         raw_response=raw_text,
     )
+def extract_response_text(response) -> str:
+    text_parts = []
+
+    for block in response.content:
+        text = getattr(block, "text", None)
+
+        if text:
+            text_parts.append(text)
+
+    return "\n".join(text_parts).strip()
 
 def diagnose_project(project_path: Path) -> DiagnosisResult:
     project_path = project_path.resolve()
@@ -166,7 +200,17 @@ def diagnose_project(project_path: Path) -> DiagnosisResult:
             raw_response=None,
         )
 
-    raw_text = response.content[0].text.strip()
+    raw_text = extract_response_text(response)
+
+    if not raw_text:
+        return DiagnosisResult(
+        diagnosis="LLM response did not contain text output.",
+        root_cause=f"Response contained no text block.\n\nRaw response:\n{response}",
+        confidence=0.0,
+        patch="",
+        raw_response=str(response),
+    )
+
     try:
         return parse_llm_json(raw_text)
     except Exception as exc:
