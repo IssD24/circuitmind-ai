@@ -14,11 +14,11 @@ Final build exit code: 0
 
 ## Diagnosis
 
-Compilation error due to use of a non-existent method 'printline' on the Serial object.
+Compilation error due to a call to a non-existent method 'printline' on the HardwareSerial class.
 
 ## Root Cause
 
-The code calls 'Serial.printline(...)', but the HardwareSerial class only defines 'println'. This is a typo/misuse of the Serial API.
+The code calls 'Serial.printline(...)', but HardwareSerial does not define a 'printline' method. The correct API method is 'println'.
 
 ## Patch
 
@@ -42,4 +42,4 @@ Build passed after patch.
 
 ## Final Workspace
 
-`C:\Users\issd1\internship-prep-2026\circuitmind-ai\.circuitmind\workspace-c9741720\broken_04_wrong_api`
+`C:\Users\issd1\internship-prep-2026\circuitmind-ai\.circuitmind\workspace-369e8c2d\broken_04_wrong_api`

@@ -14,18 +14,18 @@ Final build exit code: 0
 
 ## Diagnosis
 
-Compilation fails because Wire.begin() is called with two integer arguments (SDA, SCL pins), but the TwoWire library being linked (standard AVR Wire library) does not define a begin(int,int) overload — only ESP32's Wire library supports pin-remapping arguments.
+Compilation error: no matching function for call to 'TwoWire::begin(int, int)' at line 4.
 
 ## Root Cause
 
-The sketch uses the ESP32-style Wire.begin(sda, scl) signature, but the toolchain/board context resolves to the standard Arduino TwoWire class, which only supports Wire.begin() or Wire.begin(address). This mismatch causes 'no matching function' error at line 4.
+The code calls Wire.begin(21, 22) expecting the ESP32-style TwoWire::begin(int sda, int scl) overload, but the TwoWire library actually linked/used in this build does not provide a begin(int, int) signature (e.g., it's the AVR/standard Wire library, which only supports Wire.begin() or Wire.begin(address) for slave mode). This causes a signature mismatch at compile time.
 
 ## Patch
 
 ```diff
 --- a/broken_02_wrong_wire_signature.ino
 +++ b/broken_02_wrong_wire_signature.ino
-@@ -1,7 +1,7 @@
+@@ -1,9 +1,9 @@
  #include <Wire.h>
  
  void setup() {
@@ -34,6 +34,8 @@ The sketch uses the ESP32-style Wire.begin(sda, scl) signature, but the toolchai
    Wire.setClock(400000);
  }
  
+ void loop() {
+ }
 
 ```
 
@@ -43,4 +45,4 @@ Build passed after patch.
 
 ## Final Workspace
 
-`C:\Users\issd1\internship-prep-2026\circuitmind-ai\.circuitmind\workspace-1922030c\broken_02_wrong_wire_signature`
+`C:\Users\issd1\internship-prep-2026\circuitmind-ai\.circuitmind\workspace-75ccb81c\broken_02_wrong_wire_signature`
