@@ -2,21 +2,33 @@
 
 | Benchmark | Type | Before | Fix Result | Status | Notes |
 |---|---|---|---|---|---|
-| broken_01_missing_semicolon | compiler | fail | not fixed | ok | LLM unavailable due to Anthropic credits |
-| broken_02_wrong_wire_signature | compiler | fail | not fixed | ok | LLM unavailable due to Anthropic credits |
-| broken_03_missing_include | compiler | fail | not fixed | ok | LLM unavailable due to Anthropic credits |
-| broken_04_wrong_api | compiler | fail | not fixed | ok | LLM unavailable due to Anthropic credits |
-| broken_05_missing_include | compiler | fail | not fixed | ok | LLM unavailable due to Anthropic credits |
-| broken_06_missing_library | dependency | fail | not fixed | ok | Requires missing third-party Arduino library |
-| broken_07_incorrect_pin | logic | pass | compile-pass | ok | Compiler accepts code, but pin value is logically invalid |
-| broken_08_wrong_function_signature | compiler | fail | not fixed | ok | LLM unavailable due to Anthropic credits |
+| broken_01_missing_semicolon | compiler | fail | fixed | ok | Live Claude repair added the missing semicolon |
+| broken_02_wrong_wire_signature | compiler | fail | fixed | ok | Live Claude repair corrected the invalid `Wire.begin(...)` call |
+| broken_03_missing_include | dependency | fail | diagnosed | ok | Identified missing ArduinoJson dependency |
+| broken_04_wrong_api | compiler | fail | fixed | ok | Live Claude repair changed `Serial.printline` to `Serial.println` |
+| broken_05_missing_include | platform/toolchain | fail | diagnosed | ok | Identified AVR toolchain limitation with `<vector>` |
+| broken_06_missing_library | dependency | fail | diagnosed | ok | Identified missing ArduinoJson library in the build environment |
+| broken_07_incorrect_pin | logic | pass | compile-pass | ok | Compiler accepts code, but the pin value is logically invalid |
+| broken_08_wrong_function_signature | compiler | fail | fixed | ok | Live Claude repair fixed the missing function argument |
 | broken_09_deprecated_api | warning | pass | compile-pass | ok | Static/warning-level issue |
-| broken_10_forgotten_serial_begin | logic | pass | compile-pass | ok | Compiler accepts code, but Serial.begin is missing |
+| broken_10_forgotten_serial_begin | logic | pass | compile-pass | ok | Compiler accepts code, but `Serial.begin` is missing |
+
+## Summary
+
+- Total benchmarks: 10
+- Fixed live with Claude: 4
+- Diagnosed dependency/platform issues: 3
+- Compile-pass logic/static benchmarks: 3
+
+## Resolution Breakdown
+
+- **Fixed (40%)**: 4 / 10  
+- **Diagnosed but not source-fixable in current environment (30%)**: 3 / 10  
+- **Compile-pass logic/static cases needing metadata-aware evaluation (30%)**: 3 / 10
 
 ## Notes
 
-`Before` shows whether the original benchmark produced compiler diagnostics.
-
-`Fix Result` shows the result of the CircuitMind fix loop. For compiler-error benchmarks, `not fixed` currently reflects that live LLM repair is blocked by Anthropic credits.
-
-For logic/static benchmarks, `compile-pass` means the firmware compiled, not that the bug was truly repaired. These benchmarks require metadata-aware scoring in a future version.
+- `fixed` means CircuitMind generated a patch, applied it to a copied workspace, rebuilt the firmware, and the build passed.
+- `diagnosed` means CircuitMind identified the issue, but the fix requires an environment, dependency, or platform/toolchain change rather than a simple source-code patch.
+- `compile-pass` means the benchmark compiled before repair, so compiler-only scoring is not enough to judge correctness.
+- Live Claude repair currently demonstrates successful end-to-end fixes on source-level compiler-error benchmarks.
