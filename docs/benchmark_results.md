@@ -22,13 +22,14 @@
 
 ## Resolution Breakdown
 
-- **Fixed (40%)**: 4 / 10  
-- **Diagnosed but not source-fixable in current environment (30%)**: 3 / 10  
-- **Compile-pass logic/static cases needing metadata-aware evaluation (30%)**: 3 / 10
+- Fixed live: 4 / 10 = 40%
+- Diagnosed but not source-fixable in current environment: 3 / 10 = 30%
+- Compile-pass logic/static cases needing metadata-aware evaluation: 3 / 10 = 30%
 
 ## Notes
 
-- `fixed` means CircuitMind generated a patch, applied it to a copied workspace, rebuilt the firmware, and the build passed.
-- `diagnosed` means CircuitMind identified the issue, but the fix requires an environment, dependency, or platform/toolchain change rather than a simple source-code patch.
-- `compile-pass` means the benchmark compiled before repair, so compiler-only scoring is not enough to judge correctness.
-- Live Claude repair currently demonstrates successful end-to-end fixes on source-level compiler-error benchmarks.
+`fixed` means CircuitMind generated a patch, applied it to a copied workspace, rebuilt the firmware, and the build passed.
+
+`diagnosed` means CircuitMind identified the issue, but the fix requires an environment, dependency, or platform/toolchain change rather than a simple source-code patch.
+
+`compile-pass` means the benchmark compiled before repair, so compiler-only scoring is not enough to judge correctness.
