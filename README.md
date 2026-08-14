@@ -1,6 +1,6 @@
 # CircuitMind AI
 
-CircuitMind AI is a human-in-the-loop developer tool that diagnoses and patches Arduino/ESP32 firmware build failures.
+CircuitMind AI is an agentic firmware debugging tool that compiles embedded C/C++ projects, parses compiler diagnostics, uses an LLM to propose targeted patch diffs, validates those patches, applies them to copied workspaces, recompiles, and generates session reports.
 
 ## Goal
 
@@ -32,30 +32,31 @@ Live LLM repair currently requires a valid Anthropic API key and available credi
 
 ## Features
 
-- Docker-backed Arduino/ESP32 firmware builds
-- Structured compiler diagnostic parsing
-- Static-analysis support with cppcheck
-- LLM diagnosis stage for root-cause analysis
-- Patch validation guardrails
-- Safe copied-workspace patch application
-- Multi-iteration fix loop
-- Session report generation
-- Benchmark suite for compiler errors, missing dependencies, and firmware logic issues
+- Dockerized Arduino firmware compilation
+- Compiler diagnostic parsing
+- LLM-based root-cause diagnosis
+- Unified diff patch generation
+- Patch validation and guardrails
+- Safe copied-workspace repair loop
+- Multi-iteration fix attempts
+- Markdown report generation
+- Benchmark scoring across broken firmware cases
+- Optional Arduino Uno upload mode
 
 ## Architecture
 
 ```text
-Source firmware
-→ Docker build
-→ Compiler output
+Firmware project
+→ Dockerized Arduino build
+→ Compiler diagnostics
 → Diagnostic parser
 → LLM diagnosis
 → Patch validation
 → Copied workspace
 → Patch application
 → Rebuild
-→ Session report
-```
+→ Report
+→ Optional Arduino upload
 
 ## Usage Commands
 

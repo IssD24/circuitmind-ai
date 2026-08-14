@@ -2,9 +2,11 @@
 
 ## Goal
 
-Show CircuitMind repairing a broken Arduino firmware benchmark end-to-end using the live Claude repair workflow.
+Show CircuitMind repairing broken Arduino firmware end-to-end, generating a report, and optionally uploading the repaired firmware to an Arduino Uno.
 
-## 1. Show the broken firmware
+## Demo 1: Golden Software Repair
+
+### 1. Show the broken sketch
 
 Open:
 

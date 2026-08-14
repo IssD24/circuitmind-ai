@@ -1,32 +1,21 @@
-# CircuitMind AI Architecture
+# CircuitMind Architecture
 
-## Problem
+## Overview
 
-Arduino and ESP32 firmware errors are often difficult for beginners to understand because compiler output can be long, noisy, and spread across multiple files.
-
-CircuitMind AI will help by running the build, extracting the important errors, asking an LLM for a grounded diagnosis, and proposing a patch that the user can approve.
+CircuitMind AI is an agentic firmware debugging system for Arduino-style embedded C/C++ projects. It compiles firmware in Docker, parses diagnostics, asks an LLM for a root-cause diagnosis and patch, validates the patch, applies it to a copied workspace, rebuilds the firmware, and generates a report.
 
 ## Pipeline
 
 ```text
-User project
-   ↓
-Docker build environment
-   ↓
-arduino-cli compile
-   ↓
-Raw compiler output
-   ↓
-Diagnostic parser
-   ↓
-Structured diagnostics JSON
-   ↓
-LLM diagnosis and patch proposal
-   ↓
-Human approval
-   ↓
-Patch applied to copied workspace
-   ↓
-Rebuild
-   ↓
-Final report
+Firmware project
+→ Dockerized build
+→ Compiler diagnostics
+→ Diagnostic parser
+→ Prompt builder
+→ LLM diagnosis
+→ Patch validation
+→ Copied workspace
+→ Patch application
+→ Rebuild
+→ Report generation
+→ Optional Arduino upload
