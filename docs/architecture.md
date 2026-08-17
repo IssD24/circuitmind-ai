@@ -2,13 +2,13 @@
 
 ## Overview
 
-CircuitMind AI is an agentic firmware debugging system for Arduino-style embedded C/C++ projects. It compiles firmware in Docker, parses diagnostics, asks an LLM for a root-cause diagnosis and patch, validates the patch, applies it to a copied workspace, rebuilds the firmware, and generates a report.
+CircuitMind AI is an agentic firmware debugging system for Arduino-style embedded C/C++ projects. It compiles firmware, parses compiler diagnostics, asks an LLM for a diagnosis and patch, validates the patch, applies it to a copied workspace, rebuilds the firmware, generates a report, and can optionally upload the repaired firmware to an Arduino Uno.
 
 ## Pipeline
 
 ```text
-Firmware project
-→ Dockerized build
+Firmware source
+→ Dockerized compiler
 → Compiler diagnostics
 → Diagnostic parser
 → Prompt builder
@@ -17,5 +17,5 @@ Firmware project
 → Copied workspace
 → Patch application
 → Rebuild
-→ Report generation
+→ Report
 → Optional Arduino upload
