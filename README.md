@@ -1,160 +1,412 @@
 # CircuitMind AI
 
-CircuitMind AI is an agentic firmware debugging tool that compiles embedded C/C++ projects, parses compiler diagnostics, uses an LLM to propose targeted patch diffs, validates those patches, applies them to copied workspaces, recompiles, and generates session reports.
+CircuitMind AI is an agentic firmware debugging tool for Arduino-style embedded C/C++ projects.
 
-## Goal
-
-The tool will:
-
-1. Run an Arduino/ESP32 build inside Docker.
-2. Capture compiler errors.
-3. Parse errors into structured diagnostics.
-4. Ask an LLM to explain the likely issue and propose a patch.
-5. Show the patch to the user for approval.
-6. Apply the patch to a copied workspace and rebuild.
-7. Generate a final Markdown report.
+It compiles firmware in Docker, parses compiler diagnostics, uses an LLM to identify root causes, proposes targeted patch diffs, validates those patches, applies fixes to copied workspaces, recompiles the repaired firmware, generates reports, and can optionally upload the fixed sketch to an Arduino Uno.
 
 ## Current Status
 
-CircuitMind currently supports:
+CircuitMind is currently demo-ready for simple Arduino Uno firmware repair workflows.
 
-- Docker-backed Arduino firmware compilation
-- Compiler diagnostic parsing
-- Static-analysis support with cppcheck
-- LLM-based diagnosis flow
-- Patch validation guardrails
-- Safe copied-workspace patch application
-- Multi-iteration fix loop
-- Session logging with diagnosis JSON, patch diffs, build output, and Markdown reports
-- Firmware benchmark suite with compiler-error and logic/static-analysis examples
+Current benchmark result:
 
-Live LLM repair currently requires a valid Anthropic API key and available credits.
+```text
+7 / 10 benchmark cases fixed
+70% benchmark resolution rate
+```
+
+Hardware upload has also been tested on a physical Arduino Uno using Arduino CLI.
+
+## What It Does
+
+CircuitMind takes a broken Arduino sketch and runs it through a repair pipeline:
+
+```text
+broken firmware
+→ Dockerized Arduino build
+→ compiler diagnostics
+→ diagnostic parser
+→ LLM diagnosis
+→ patch validation
+→ copied workspace
+→ patch application
+→ rebuild
+→ report
+→ optional Arduino upload
+```
+
+The original benchmark/project folder is preserved. Fixes are applied only inside copied workspaces under `.circuitmind/`.
 
 ## Features
 
 - Dockerized Arduino firmware compilation
 - Compiler diagnostic parsing
 - LLM-based root-cause diagnosis
-- Unified diff patch generation
+- Targeted C/C++ unified diff patch generation
 - Patch validation and guardrails
 - Safe copied-workspace repair loop
 - Multi-iteration fix attempts
 - Markdown report generation
 - Benchmark scoring across broken firmware cases
 - Optional Arduino Uno upload mode
+- Simple web interface for running repair sessions
 
 ## Architecture
 
 ```text
-Firmware project
-→ Dockerized Arduino build
-→ Compiler diagnostics
-→ Diagnostic parser
-→ LLM diagnosis
-→ Patch validation
-→ Copied workspace
-→ Patch application
-→ Rebuild
-→ Report
-→ Optional Arduino upload
+Firmware Project
+    ↓
+Dockerized Arduino Build
+    ↓
+Compiler Output
+    ↓
+Diagnostic Parser
+    ↓
+Prompt Builder
+    ↓
+LLM Diagnosis + Patch
+    ↓
+Patch Validation
+    ↓
+Copied Workspace
+    ↓
+Patch Application
+    ↓
+Rebuild
+    ↓
+Report Generation
+    ↓
+Optional Arduino Upload
+```
 
-## Usage Commands
+Main source modules:
 
-From the project root, set `PYTHONPATH`:
+```text
+src/circuitmind/build.py          Dockerized Arduino build runner
+src/circuitmind/parse.py          Arduino compiler diagnostic parser
+src/circuitmind/analyze.py        Build + diagnostic analysis flow
+src/circuitmind/prompt_builder.py LLM prompt construction
+src/circuitmind/diagnose.py       LLM diagnosis and patch parsing
+src/circuitmind/validate.py       Patch and response validation
+src/circuitmind/patch.py          Copied workspace and patch application
+src/circuitmind/fix.py            Iterative repair loop
+src/circuitmind/report.py         Markdown report generation
+src/circuitmind/upload.py         Arduino CLI compile/upload support
+src/circuitmind/cli.py            Command-line interface
+```
+
+## Requirements
+
+- Python 3.13+
+- Docker Desktop
+- Git
+- Arduino CLI, for hardware upload mode
+- Anthropic API key, for live LLM repair
+
+## Installation
+
+Clone the repo:
+
+```powershell
+git clone https://github.com/IssD24/circuitmind-ai.git
+cd circuitmind-ai
+```
+
+Install Python dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Build the Docker image:
+
+```powershell
+docker build -t circuitmind -f docker/Dockerfile .
+```
+
+Set environment variables:
 
 ```powershell
 $env:PYTHONPATH="src"
+$env:ANTHROPIC_API_KEY="your-api-key"
 ```
 
-Analyze a benchmark:
+Do not commit your API key.
+
+## Arduino CLI Setup
+
+Arduino CLI is only needed for hardware upload mode.
+
+Check Arduino CLI:
 
 ```powershell
-python -m circuitmind.cli analyze benchmarks/broken_01_missing_semicolon --output analysis_01.json
+arduino-cli version
 ```
 
-Diagnose a benchmark:
+Initialize Arduino CLI:
 
 ```powershell
+arduino-cli config init
+arduino-cli core update-index
+arduino-cli core install arduino:avr
+```
+
+Connect an Arduino Uno and check the port:
+
+```powershell
+arduino-cli board list
+```
+
+Example output:
+
+```text
+Port Protocol Type              Board Name  FQBN            Core
+COM6 serial   Serial Port (USB) Arduino UNO arduino:avr:uno arduino:avr
+```
+
+## Usage
+
+### Analyze a broken firmware project
+
+```powershell
+$env:PYTHONPATH="src"
+python -m circuitmind.cli analyze benchmarks/broken_01_missing_semicolon
+```
+
+### Diagnose a broken firmware project
+
+```powershell
+$env:PYTHONPATH="src"
+$env:ANTHROPIC_API_KEY="your-api-key"
+
 python -m circuitmind.cli diagnose benchmarks/broken_01_missing_semicolon
 ```
 
-Run the fix loop:
+### Run the repair loop
 
 ```powershell
-python -m circuitmind.cli fix benchmarks/broken_01_missing_semicolon --max-iterations 3
+$env:PYTHONPATH="src"
+$env:ANTHROPIC_API_KEY="your-api-key"
+
+python -m circuitmind.cli fix benchmarks/broken_01_missing_semicolon --max-iterations 3 --report reports/broken_01_report.md
 ```
 
-Run all tests:
+Expected result:
 
-```powershell
-python -m pytest
+```text
+CircuitMind fixed the project.
+Report saved to: reports\broken_01_report.md
 ```
 
-## Running the Benchmark Suite
-
-Run all firmware benchmarks with:
+### Run the benchmark suite
 
 ```powershell
 python benchmarks/run_all.py
 ```
 
-This prints a terminal scoreboard and writes a generated Markdown scoreboard to:
+This writes a scoreboard to:
 
 ```text
 benchmark_results/scoreboard.md
 ```
 
-The `benchmark_results/` folder is ignored by Git because it contains generated output.
+## Arduino Upload Demo
+
+CircuitMind can optionally upload a repaired workspace to an Arduino Uno after a successful fix.
+
+Requirements:
+
+- Docker Desktop running
+- Arduino CLI installed locally
+- Arduino AVR core installed
+- Arduino Uno connected over USB
+- `ANTHROPIC_API_KEY` set in the terminal
+
+Check the connected board:
+
+```powershell
+arduino-cli board list
+```
+
+Run fix + upload:
+
+```powershell
+$env:PYTHONPATH="src"
+$env:ANTHROPIC_API_KEY="your-api-key"
+
+python -m circuitmind.cli fix benchmarks/broken_01_missing_semicolon --max-iterations 1 --upload --port COM6 --report reports/broken_01_upload.md
+```
+
+Replace `COM6` with the detected board port.
+
+Expected upload result:
+
+```text
+Upload Result
+Command: arduino-cli compile --upload -p COM6 --fqbn arduino:avr:uno ...
+Exit code: 0
+```
+
+## Hardware Blink Demo
+
+The hardware blink demo shows a visible result on the Arduino Uno onboard LED.
+
+Run:
+
+```powershell
+$env:PYTHONPATH="src"
+$env:ANTHROPIC_API_KEY="your-api-key"
+
+python -m circuitmind.cli fix benchmarks/hardware_broken_blink --max-iterations 1 --upload --port COM6 --report reports/hardware_blink_upload.md
+```
+
+Expected result:
+
+```text
+CircuitMind fixed the project.
+Upload Result
+Exit code: 0
+```
+
+After upload, the Arduino Uno onboard LED should blink.
 
 ## Benchmark Results
 
-| Benchmark | Before | Fix Result | Notes |
-|---|---|---|---|
-| broken_01_missing_semicolon | Fail | Not fixed | LLM unavailable: API key/credits required |
-| broken_02_wrong_wire_signature | Fail | Not fixed | LLM unavailable: API key/credits required |
-| broken_03_missing_include | Fail | Not fixed | LLM unavailable: API key/credits required |
-| broken_04_wrong_api | Fail | Not fixed | LLM unavailable: API key/credits required |
-| broken_05_missing_include | Fail | Not fixed | LLM unavailable: API key/credits required |
-| broken_06_missing_library | Fail | Not fixed | Missing third-party library / LLM unavailable |
-| broken_07_incorrect_pin | Pass | Fixed | Logic issue; compiler does not catch |
-| broken_08_wrong_function_signature | Fail | Not fixed | LLM unavailable: API key/credits required |
-| broken_09_deprecated_api | Pass | Fixed | Warning/static issue; compiler does not catch |
-| broken_10_forgotten_serial_begin | Pass | Fixed | Logic issue; compiler does not catch |
+CircuitMind was evaluated on 10 broken Arduino firmware benchmarks covering syntax errors, API misuse, logic issues, warning-level issues, missing dependencies, and platform/toolchain limitations.
 
-## Understanding Benchmark Results
+Current result:
 
-The benchmark runner reports two main stages:
+```text
+Fixed: 7 / 10
+Not fixed: 3 / 10
+Resolution rate: 70%
+```
 
-- **Before**: whether the original benchmark produced compiler diagnostics.
-- **Fix Result**: whether CircuitMind's fix loop ended in a compiling state.
+See the full benchmark table here:
 
-Some benchmarks are compiler-error benchmarks. These should fail before repair because Arduino CLI can detect the issue.
+```text
+docs/benchmark_results.md
+```
 
-Other benchmarks are logic/static-analysis benchmarks. These may compile successfully even though the firmware still contains a bug. For those cases, a `Pass` result means only that the compiler accepted the code. It does not mean the program is logically correct.
+Current benchmark categories include:
 
-Examples:
+- Compiler/syntax errors
+- Arduino API misuse
+- Missing includes
+- Missing libraries
+- Function signature errors
+- Logic-level benchmark cases
+- Warning/static-analysis-level benchmark cases
 
-- `broken_01_missing_semicolon` fails before repair because the compiler detects the syntax error.
-- `broken_07_incorrect_pin` may compile because the compiler does not know that `-1` is not a valid practical output pin.
-- `broken_10_forgotten_serial_begin` may compile because using `Serial.println` without `Serial.begin` is a runtime/logic issue, not a syntax error.
+## Reports
 
-Future benchmark scoring should use `benchmark.json` metadata so CircuitMind can evaluate both compiler failures and logic-level firmware issues.
+CircuitMind can generate Markdown reports for repair sessions.
+
+Example:
+
+```powershell
+python -m circuitmind.cli fix benchmarks/broken_01_missing_semicolon --max-iterations 3 --report reports/broken_01_report.md
+```
+
+Reports include:
+
+- Project name
+- Success status
+- Number of iterations
+- Final build exit code
+- Diagnosis
+- Root cause
+- Patch
+- Final message
+- Copied workspace path
+
+## Safety Design
+
+CircuitMind is designed to avoid unsafe source modifications.
+
+Safety properties:
+
+- Original benchmark/project folders are not modified directly.
+- Patches are applied only inside copied workspaces.
+- Workspaces are created under `.circuitmind/`.
+- Patch structure is validated before application.
+- Unknown file edits can be rejected.
+- Malformed diffs are handled with guardrails.
+- The repair loop stops at the configured max iteration limit.
+- Reports preserve the diagnosis and patch history.
+
+Copied workspace flow:
+
+```text
+original project
+→ copied workspace
+→ patch copied workspace
+→ rebuild copied workspace
+→ report result
+```
+
+## Web Interface
+
+CircuitMind includes a simple FastAPI web interface.
+
+Run:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m uvicorn circuitmind.web.app:app --reload
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000/static/index.html
+```
+
+Health check:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+API docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+The CLI workflow is the primary demo path. The web UI is experimental.
 
 ## Current Limitations
 
-- Live LLM repair requires a valid Anthropic API key and available credits.
-- Some benchmarks compile successfully even though they contain logic bugs.
-- The current benchmark runner treats a compiling final state as fixed.
-- Logic/static benchmarks require metadata-aware scoring instead of compiler-only scoring.
-- Third-party library failures may require Docker image updates or dependency installation rather than source-code patches.
-- Hardware upload support is not implemented yet.
-- The patch approval flow is planned but not fully built yet.
+- LLM patch quality depends on compiler diagnostics and source context.
+- Dependency issues, such as missing ArduinoJson, may require library installation.
+- Platform/toolchain issues, such as unsupported STL headers on AVR, may require target-specific rewrites.
+- Logic bugs that already compile need stronger metadata-aware analysis.
+- LLM output can vary between runs, so validation and patch guardrails are required.
+- Current benchmarks focus on Arduino-style firmware.
+- Web UI is experimental compared to the CLI workflow.
 
-## Next Steps
+## Roadmap
 
-- Add Anthropic API credits and test live repair on compiler-error benchmarks.
-- Improve benchmark scoring so logic/static benchmarks are not marked as fixed just because they compile.
-- Use `benchmark.json` metadata during benchmark evaluation.
-- Add explicit user approval before applying generated patches.
-- Improve before/after error-count reporting.
-- Add hardware upload support later.
+Planned improvements:
+
+- Add deterministic mock LLM mode for tests
+- Improve metadata-aware logic repair
+- Improve benchmark scoring beyond compiler pass/fail
+- Expand benchmark suite
+- Improve web UI polish
+- Add more embedded targets beyond Arduino Uno
+
+## Resume Summary
+
+CircuitMind AI demonstrates an agentic firmware debugging workflow:
+
+```text
+Python + Docker + Arduino CLI + Embedded C/C++ + LLM Agents
+```
+
+Current resume-ready result:
+
+```text
+Resolved 70% of 10 benchmark firmware cases through live end-to-end repair, with Arduino Uno upload support validating repaired firmware on hardware.
+```
