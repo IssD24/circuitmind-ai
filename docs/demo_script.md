@@ -2,13 +2,22 @@
 
 ## Goal
 
-Show CircuitMind repairing broken Arduino firmware end-to-end, generating a report, and optionally uploading the repaired firmware to an Arduino Uno.
+Show CircuitMind repairing broken Arduino firmware end-to-end, generating a report, and optionally uploading the repaired firmware to a physical Arduino Uno.
 
-## Demo 1: Golden Software Repair
+This demo focuses on the CLI workflow because it is the most stable and reproducible path.
 
-### 1. Show the broken sketch
+## Demo Setup
 
-Open:
+Requirements:
 
-```text
-benchmarks/broken_01_missing_semicolon/broken_01_missing_semicolon.ino
+- Docker Desktop running
+- Python dependencies installed
+- Arduino CLI installed, for hardware upload demo
+- Arduino Uno connected over USB, for hardware upload demo
+- Anthropic API key set in the terminal
+
+Set environment variables:
+
+```powershell
+$env:PYTHONPATH="src"
+$env:ANTHROPIC_API_KEY="your-api-key"

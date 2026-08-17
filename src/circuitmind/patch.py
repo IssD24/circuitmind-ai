@@ -128,6 +128,7 @@ def apply_with_patch_ng(patch_text: str, workspace_dir: Path) -> tuple[bool, str
 
 def apply_simple_line_replacements(patch_text: str, workspace_dir: Path) -> tuple[bool, str]:
     replacements: list[tuple[str, str]] = []
+    deletions: list[str] = []
 
     pending_old: str | None = None
 
@@ -135,16 +136,33 @@ def apply_simple_line_replacements(patch_text: str, workspace_dir: Path) -> tupl
         if line.startswith("--- ") or line.startswith("+++ "):
             continue
 
+        if line.startswith("@@"):
+            if pending_old is not None:
+                deletions.append(pending_old)
+                pending_old = None
+            continue
+
         if line.startswith("-") and not line.startswith("---"):
+            if pending_old is not None:
+                deletions.append(pending_old)
+
             pending_old = line[1:]
             continue
 
         if line.startswith("+") and not line.startswith("+++") and pending_old is not None:
             replacements.append((pending_old, line[1:]))
             pending_old = None
+            continue
 
-    if not replacements:
-        return False, "No simple line replacements found."
+        if pending_old is not None:
+            deletions.append(pending_old)
+            pending_old = None
+
+    if pending_old is not None:
+        deletions.append(pending_old)
+
+    if not replacements and not deletions:
+        return False, "No simple line replacements or deletions found."
 
     candidate_files = []
     for suffix in ("*.ino", "*.cpp", "*.h", "*.hpp", "*.c"):
@@ -160,11 +178,21 @@ def apply_simple_line_replacements(patch_text: str, workspace_dir: Path) -> tupl
                 text = text.replace(old_line, new_line, 1)
                 changed = True
 
+        for old_line in deletions:
+            line_with_newline = old_line + "\n"
+
+            if line_with_newline in text:
+                text = text.replace(line_with_newline, "", 1)
+                changed = True
+            elif old_line in text:
+                text = text.replace(old_line, "", 1)
+                changed = True
+
         if changed:
             file_path.write_text(text, encoding="utf-8")
-            return True, "Patch applied with simple line replacement fallback."
+            return True, "Patch applied with simple replacement/deletion fallback."
 
-    return False, "Simple line replacement fallback could not find matching source line."
+    return False, "Simple fallback could not find matching source lines."
 
 
 def apply_patch_to_workspace(patch_text: str, project_path: Path) -> PatchApplyResult:

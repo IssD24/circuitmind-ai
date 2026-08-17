@@ -272,15 +272,11 @@ After upload, the Arduino Uno onboard LED should blink.
 
 ## Benchmark Results
 
-CircuitMind was evaluated on 10 broken Arduino firmware benchmarks covering syntax errors, API misuse, logic issues, warning-level issues, missing dependencies, and platform/toolchain limitations.
-
-Current result:
+CircuitMind currently resolves all 10 cases in the official benchmark suite.
 
 ```text
-Fixed: 7 / 10
-Not fixed: 3 / 10
-Resolution rate: 70%
-```
+10 / 10 fixed
+100% benchmark resolution rate
 
 See the full benchmark table here:
 

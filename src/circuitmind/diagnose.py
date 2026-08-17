@@ -183,7 +183,7 @@ def diagnose_project(project_path: Path) -> DiagnosisResult:
     try:
         response = client.messages.create(
             model="claude-sonnet-5",
-            max_tokens=1200,
+            max_tokens=4000,
             messages=[
                 {
                     "role": "user",
