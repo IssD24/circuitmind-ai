@@ -1,29 +1,44 @@
-# broken_01_missing_semicolon Report
-
-## Benchmark
-
-`broken_01_missing_semicolon`
-
-## Diagnostics Before
-
-The benchmark fails before repair because the Arduino sketch is missing a semicolon.
-
-## Diagnosis Result
-
-CircuitMind successfully parsed the compiler diagnostics, but live LLM repair is currently unavailable because the Anthropic API key/credits are required.
-
-## Patch
-
-No patch was produced during the live run.
-
-## Diagnostics After
-
-No repaired workspace was generated because the LLM diagnosis step did not return a patch.
+# CircuitMind Report — broken_01_missing_semicolon
 
 ## Result
 
-Status: Not fixed in the live run.
+Success: True
 
-## Notes
+Iterations: 1
 
-This benchmark is still useful because it confirms that CircuitMind can compile the sketch in Docker, detect compiler failure, parse diagnostics, and pass the issue into the diagnosis/fix pipeline.
+Final build exit code: 0
+
+## Project
+
+`benchmarks\broken_01_missing_semicolon`
+
+## Diagnosis
+
+Compilation error: missing semicolon after 'Serial.begin(9600)' on line 2, causing the compiler to fail at line 3 with 'expected ; before } token'.
+
+## Root Cause
+
+The statement 'Serial.begin(9600)' is not terminated with a semicolon, which is required in C/C++ syntax for statement termination.
+
+## Patch
+
+```diff
+--- a/broken_01_missing_semicolon.ino
++++ b/broken_01_missing_semicolon.ino
+@@ -1,5 +1,5 @@
+ void setup() {
+-  Serial.begin(9600)
++  Serial.begin(9600);
+ }
+ 
+ void loop() {
+
+```
+
+## Final Message
+
+Build passed after patch.
+
+## Final Workspace
+
+`C:\Users\issd1\internship-prep-2026\circuitmind-ai\.circuitmind\workspace-cf61ae7f\broken_01_missing_semicolon`
